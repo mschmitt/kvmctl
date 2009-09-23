@@ -26,6 +26,13 @@ VNCPORT=`expr 5900 + $NUMID`
 
 PIDFILE=$KVMDIR/pidfile.pid
 
+# Exported variables are for accessibility through /proc
+export KVMDIR
+export PIDFILE
+export IMAGE
+export MAC
+export NUMID
+
 # Do not block current workdirectory when forking
 cd /
 
