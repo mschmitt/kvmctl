@@ -1,5 +1,24 @@
 #!/bin/sh 
 
+if [ $1 == "list" ]; then
+	FORMAT="%-5s %-5s %-40s\n"
+	printf "$FORMAT" "PID" "ID" "directory"
+	printf "$FORMAT" "---" "--" "---------"
+	for PID in $(
+		ps -ef | 
+		grep qemu-system-x86_64 | 
+		grep -v grep | 
+		awk '{print $2}'
+	)
+	do
+		cd /proc/$PID
+		eval $(xargs -0 -n1 echo < environ  | grep KVMDIR)
+		eval $(xargs -0 -n1 echo < environ  | grep NUMID)
+		printf "$FORMAT" $PID $NUMID $KVMDIR
+	done
+	exit
+fi
+
 # Basic argument check
 if [ ! $1 ]; then
 	echo "Usage: $0 /path/to/kvm"
