@@ -1,0 +1,4 @@
+IMAGE=/drbd/foo/foo.vmdk
+MAC=00:16:3e:12:34:56
+MEMORY=512
+NUMID=4

@@ -1,0 +1,88 @@
+#!/bin/sh 
+
+# Basic argument check
+if [ ! $1 ]; then
+	echo "Usage: $0 /path/to/kvm"
+	exit 1
+fi
+if [ -d $1 ]; then
+	KVMDIR=$1
+else
+	echo "Please specify directory."
+	exit 1
+fi
+if [ -s "$KVMDIR/kvm.cfg" ]; then
+	. $KVMDIR/kvm.cfg
+else
+	echo "Please specify directory containing a kvm.cfg."
+	exit 1
+fi
+
+# Calculate TCP port for Monitor, starting at 1000
+TCPPORT=`expr 1000 + $NUMID`
+
+# Calculate TCP port for VNC console, starting at 5900
+VNCPORT=`expr 5900 + $NUMID`
+
+PIDFILE=$KVMDIR/pidfile.pid
+
+# Do not block current workdirectory when forking
+cd /
+
+case "$2" in 
+start)
+	echo -n "Starting KVM from $KVMDIR: " 
+	# Make sure kvm is loaded, just in case.
+	lsmod | grep kvm > /dev/null || modprobe kvm-intel
+	if [ $? -ne 0 ]; then
+		echo "Failed. (Couldn't load KVM module.)"
+	fi
+	/usr/local/kvm/bin/qemu-system-x86_64 \
+		-hda $IMAGE \
+		-vnc 127.0.0.1:$NUMID \
+		-m $MEMORY \
+		-net nic,macaddr=$MAC \
+		-net tap \
+		-enable-kvm \
+		-k de \
+		-pidfile $PIDFILE \
+		-monitor tcp:127.0.0.1:$TCPPORT,server,nowait \
+		-name $IMAGE \
+		-daemonize 
+	if [ $? -eq 0 ]
+	then
+		echo "Success. (VNC on $VNCPORT / $NUMID, Monitor on $TCPPORT)"
+	else
+		echo "Failed. (Couldn't run KVM)"
+	fi
+	;;
+stop)
+	echo "system_powerdown" | 
+		nc 127.0.0.1 $TCPPORT
+	if [ $? -eq 0 ]
+	then
+		echo ""
+		echo "Signaled powerdown to KVM in $KVMDIR."
+	else
+		echo "Failed. (Couldn't connect to monitor. Is the machine up?)"
+	fi
+	;;
+monitor)
+	echo "Starting Monitor for KVM in $KVMDIR ****** Ctrl+C to exit."
+	exec nc 127.0.0.1 $TCPPORT
+	;;
+vnc)
+	echo "Starting VNC for KVM in $KVMDIR."
+	exec vncviewer -AutoSelect=0 127.0.0.1:$NUMID
+	;;
+status)
+	echo -e "info status\ninfo kvm\ninfo network" | 
+		nc -w 1 127.0.0.1 $TCPPORT
+	if [ $? -eq 0 ]
+	then
+		echo ""
+	else
+		echo "Error: couldn't connect to monitor. Is the machine up?"
+	fi
+	;;
+esac
