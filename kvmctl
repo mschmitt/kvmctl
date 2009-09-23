@@ -23,7 +23,9 @@ fi
 
 # Basic argument check
 if [ ! $1 ]; then
-	echo "Usage: $0 /path/to/kvm"
+	echo "Usage:"
+	echo "$0 /path/to/kvm (start|stop|monitor|vnc|status)"
+	echo "$0 list"
 	exit 1
 fi
 if [ -d $1 ]; then
