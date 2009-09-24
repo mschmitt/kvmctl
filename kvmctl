@@ -60,6 +60,8 @@ export PIDFILE
 export IMAGE
 export MAC
 export NUMID
+export TCPPORT
+export VNCPORT
 
 # Do not block current workdirectory when forking
 cd /
@@ -83,6 +85,7 @@ start)
 		-pidfile $PIDFILE \
 		-monitor tcp:127.0.0.1:$TCPPORT,server,nowait \
 		-name $IMAGE \
+		$MOREOPTS \
 		-daemonize 
 	if [ $? -eq 0 ]
 	then
