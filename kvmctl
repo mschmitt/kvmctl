@@ -16,7 +16,11 @@ if [ "z$1" == "zlist" ]; then
 		eval $(xargs -0 -n1 echo < environ  | grep NUMID)
 		eval $(xargs -0 -n1 echo < environ  | grep IMAGE)
 		IMAGE=`basename $IMAGE`
-		STATUS=`$0 $KVMDIR status | awk -F: '/^VM status:/{print $2}'`
+		STATUS=$(
+			$0 $KVMDIR status | 
+			sed 's/\r//g' | 
+			awk '/^VM status:/{print $NF}'
+		)
 		printf "$FORMAT" $PID $NUMID $KVMDIR $IMAGE $STATUS
 	done
 	exit
