@@ -1,0 +1,160 @@
+\documentclass[11pt]{article}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2mm}
+\usepackage[utf8]{inputenc}
+\usepackage{underscore}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{float}
+\geometry{a4paper,left=25mm,right=20mm,top=2cm,bottom=2cm}
+\lstset{basicstyle=\ttfamily,breaklines=true,columns=fixed,flexiblecolumns=true,captionpos=b}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{helvet}
+\title{kvmctl \\ Linux KVM controller}
+
+\begin{document}
+
+\maketitle
+
+\texttt{kvmctl} is how we manage our small "virtual datacenter". 
+
+It is experimental software, as the user interface is not stabilized yet.
+
+\section{The \texttt{kvmctl} environment}
+
+\texttt{kvmctl} makes the the following assumptions about its environment:
+
+\begin{itemize}
+\item Each virtual machine has its own parent directory (DRBD mountpoints in our case).
+\item In each directory resides the image and a kvm.cfg configuration file
+\end{itemize}
+
+\section{\texttt{kvm.cfg} format}
+
+In \texttt{kvm.cfg}, the following options are mandatory:
+
+\begin{itemize}
+\item \texttt{IMAGE} (Mandatory) The absolute path to the image file.
+\item \texttt{MAC} (Mandatory) A unique MAC address for the VM.
+\item \texttt{NUMID} (Mandatory) A unique ID which is used for calculating VNC and monitor ports.
+\item \texttt{MEMORY} (Mandatory) Amount of memory that will be assigned to the VM.
+\item \texttt{MOREOPTS} (Optional) Additional options that will be passed to KVM.
+\end{itemize}
+
+\begin{lstlisting}[caption=kvm.cfg example]
+IMAGE=/drbd/foo/foo.vmdk
+MAC=00:16:3e:12:34:56
+MEMORY=512
+NUMID=4
+MOREOPTS="-cdrom /path/to/cd.iso -boot d"
+\end{lstlisting}
+
+\section{\texttt{kvm.cfg} syntax}
+
+Currently, there are two possible invocations for kvmctl:
+
+\begin{itemize}
+\item \texttt{kvmctl list} - Prints a list of all VMs that are currently under control of \texttt{kvmctl}.
+\item \texttt{kvmctl <image_dir> <command>} - Applies \emph{command} to the image contained in \emph{image_dir}.
+\end{itemize}
+
+The syntax for the "command" invocation is subject to change in the near future.
+
+\section{\texttt{kvmctl} commands}
+
+\subsection{start}
+
+\texttt{kvmctl <image_dir> start} boots the image contained in \emph{image_dir}.
+
+The started VM is backgrounded. VNC is available at (5900+NUMID) and the KVM monitor in raw TCP mode is available at 
+(1000+NUMID).
+
+\subsection{stop}
+
+\texttt{kvmctl <image_dir> stop} sends a poweroff signal to the VM running from the image in \emph{image_dir},
+usually resulting in a clean shutdown. 
+
+\subsection{kill}
+
+\emph{FIXME: Not implemented.}
+
+\texttt{kvmctl <image_dir> kill} kills the VM running from the image in \emph{image_dir}. 
+
+\subsection{status}
+
+\texttt{kvmctl <image_dir> status} prints a brief summary of the status of the VM running from the image in \emph{image_dir}.
+
+\subsection{vnc}
+
+\texttt{kvmctl <image_dir> vnc} launches a VNC viewer and connects it to the VM running from the image in \emph{image_dir}.
+
+\subsection{monitor}
+
+\texttt{kvmctl <image_dir> vnc} connects to the KVM/Qemu monitor of the VM running from the image in \emph{image_dir}.
+
+\section{Bugs and Limitations}
+
+\begin{itemize}
+\item Support for live migration is not planned.
+\item The syntax for the "command" invocation is subject to change in the near future.
+\end{itemize}
+
+
+\begin{appendix}
+\section{Links}
+
+\begin{itemize}
+\item Python script for generating random MAC addresses \\ http://tinyurl.com/macgen-py
+\item Qemu-Documentation \\ http://www.qemu.org/qemu-doc.html
+\item Qemu-KVM-Wiki \\ http://qemu-buch.de/de/index.php/Hauptseite
+\item KVM Howto \\  http://www.linux-kvm.org/page/HOWTO
+\item KVM FAQ \\  http://www.linux-kvm.org/page/FAQ
+\end{itemize}
+
+\section{FYI: Interface configuration}
+
+Here's how we configure our interfaces on CentOS 5:
+
+\begin{lstlisting}[caption=ifcfg-eth0 - The ethernet interface]
+DEVICE=eth0
+TYPE=Ethernet
+ONBOOT=yes
+BRIDGE=br0
+HWADDR=00:...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ifcfg-br0 - The bridge]
+DEVICE=br0
+TYPE=Bridge
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=Bridge
+BROADCAST=192.168....
+IPADDR=192.168....
+NETMASK=255.255.255.0
+NETWORK=192.168....
+\end{lstlisting}
+
+Scripts for pulling up \emph{tap} devices are in the \emph{tapscripts} directory. 
+These should go to \emph{/etc}.
+
+\section{Copyright and license}
+
+Copyright (c) 2009, Martin Schmitt $<$mas at scsy dot de$>$
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\end{appendix}
+
+\end{document}
