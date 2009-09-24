@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# chkconfig: 345 90 10
+# description: KVM startup/shutdown
+
+case $1 in
+start)
+	find /drbd -name kvm.cfg |
+	while read CFG
+	do
+		KVMDIR=`dirname $CFG`
+		echo "Starting KVM in $KVMDIR"
+		/usr/local/sbin/kvmctl $KVMDIR start
+	done
+	;;
+stop)
+	kvmctl list | grep -v '^PID' | grep -v '^---' | awk '{print $3}' |
+	while read KVMDIR
+	do
+		echo "Stopping KVM in $KVMDIR"
+		/usr/local/sbin/kvmctl $KVMDIR stop
+	done
+	echo "Waiting 60 seconds for all KVM instances to shut down."
+	sleep 60
+	;;
+*)
+	echo "Usage: $0 (start|stop)"
+	;;
+esac
