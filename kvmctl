@@ -1,9 +1,9 @@
 #!/bin/sh 
 
 if [ "z$1" == "zlist" ]; then
-	FORMAT="%-5s %-5s %-30s %-20s\n"
-	printf "$FORMAT" "PID" "ID" "directory" "image"
-	printf "$FORMAT" "---" "--" "---------" "-----"
+	FORMAT="%-5s %-5s %-25s %-25s %-10s\n"
+	printf "$FORMAT" "PID" "ID" "Directory" "Image" "Status"
+	printf "$FORMAT" "---" "--" "---------" "-----" "------"
 	for PID in $(
 		ps -ef | 
 		grep qemu-system-x86_64 | 
@@ -16,7 +16,8 @@ if [ "z$1" == "zlist" ]; then
 		eval $(xargs -0 -n1 echo < environ  | grep NUMID)
 		eval $(xargs -0 -n1 echo < environ  | grep IMAGE)
 		IMAGE=`basename $IMAGE`
-		printf "$FORMAT" $PID $NUMID $KVMDIR $IMAGE
+		STATUS=`$0 $KVMDIR status | awk -F: '/^VM status:/{print $2}'`
+		printf "$FORMAT" $PID $NUMID $KVMDIR $IMAGE $STATUS
 	done
 	exit
 fi
