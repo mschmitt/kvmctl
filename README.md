@@ -7,4 +7,4 @@ Status: Experimental - User interface (argument order) is subject to change.
 
 See doc/kvmctl.pdf for more information:
 
-    (http://github.com/unixtippse/kvmctl/raw/master/doc/kvmctl.pdf)
+    http://github.com/mschmitt/kvmctl/raw/master/doc/kvmctl.pdf
